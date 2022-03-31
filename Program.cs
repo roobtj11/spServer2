@@ -1,10 +1,17 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 public class vBallTV
 {
+    public delegate void MyEventHandler(object source, EventArgs e);
+
+    public static Timer aTimer;
+
     static Dictionary<string, Users> accounts = new Dictionary<string, Users>();
     private const string k_GlobalIp = "127.0.0.1";
     private const string k_LocalIp = "127.0.0.1";
@@ -39,6 +46,12 @@ public class vBallTV
     {
         try
         {
+            aTimer = new System.Timers.Timer();
+            aTimer.Interval = 2000;
+            aTimer.Elapsed += (sender, e) => OnTimedEvent(sender,e,handler);
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+
             Console.WriteLine("{0} connected", handler.RemoteEndPoint);
             string[] wResponse = WelcomeMenu(handler);
             if(wResponse[0] == "True")
@@ -216,5 +229,12 @@ public class vBallTV
                 adder.WriteLine(key.ToString() + "," + accounts[key].print());
             }
         }
+    }
+    private static void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e, Socket handler)
+    {
+        Console.WriteLine("The Elapsed event was raised at {0} {1}", e.SignalTime, handler.RemoteEndPoint);
+
+        disconnect(handler);
+        return;
     }
 }
