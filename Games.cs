@@ -58,6 +58,11 @@ public class Games
         this.t1SetsWon = t1SetsWon;
         this.t2SetsWon = t2SetsWon;
     }
+
+    public Games()
+    {
+
+    }
     
     public string print()
     {
