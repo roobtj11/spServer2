@@ -2,23 +2,27 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Timers;
-using Timer = System.Timers.Timer;
+
 
 public class vBallTV
 {
-    public delegate void MyEventHandler(object source, EventArgs e);
-
-    public static Timer aTimer;
 
     static Dictionary<string, Users> accounts = new Dictionary<string, Users>();
+    static List<Games> GameList = new List<Games> ();
+    static int gamecount = 0;
     private const string k_GlobalIp = "127.0.0.1";
     private const string k_LocalIp = "127.0.0.1";
     private const int k_Port = 7777;
     public static void  Main(string[] args)
     {
         LoadUsers();
+        LoadGames();
+        ExportGames();
+        SendGames();
         var ipAddress = IPAddress.Parse(k_LocalIp);
         var localEp = new IPEndPoint(ipAddress, k_Port);
         using var listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -46,12 +50,6 @@ public class vBallTV
     {
         try
         {
-            aTimer = new System.Timers.Timer();
-            aTimer.Interval = 2000;
-            aTimer.Elapsed += (sender, e) => OnTimedEvent(sender,e,handler);
-            aTimer.AutoReset = true;
-            aTimer.Enabled = true;
-
             Console.WriteLine("{0} connected", handler.RemoteEndPoint);
             string[] wResponse = WelcomeMenu(handler);
             if(wResponse[0] == "True")
@@ -74,56 +72,47 @@ public class vBallTV
 
     public static string[] WelcomeMenu(Socket handler)
     {
-        try
+
+        for (; ; )
         {
-            for (; ; )
+            string[] response = { };
+            string loginORcreate = Network.recievemessage(handler);
+            if (loginORcreate == "Quit")
+                throw new Exception("a");
+            else if (loginORcreate == "C")
             {
-                string[] response = { };
-                string loginORcreate = Network.recievemessage(handler);
-                if (loginORcreate == "Quit")
-                    throw new Exception("a");
-                else if (loginORcreate == "C")
+                Console.WriteLine("{0} is trying to create a new user", handler.RemoteEndPoint);
+                string uname = CreateNewUser(handler);
+                if (uname == "back")
                 {
-                    Console.WriteLine("{0} is trying to create a new user", handler.RemoteEndPoint);
-                    string uname = CreateNewUser(handler);
-                    if (uname == "back")
-                    {
-                        
-                    }
-                    else
-                    {
-                        response[0] = "True";
-                        response[1] = uname;
-                        response[2] = "1";
-                        return response;
-                    }
+
                 }
-                else if (loginORcreate == "L")
+                else
                 {
-                    Console.WriteLine("hit");
-                    string[] sResponse = SignIn(handler);
-                    if (sResponse[0] == "back")
-                    {
-                        
-                    }
-                    else if (sResponse[0] == "True")
-                    {
-                        return sResponse;
-                    }
-                    else
-                    {
-                        response[0] = "false";
-                        return response;
-                    }
+                    response[0] = "True";
+                    response[1] = uname;
+                    response[2] = "1";
+                    return response;
                 }
             }
+            else if (loginORcreate == "L")
+            {
+                Console.WriteLine("hit");
+                string[] sResponse = SignIn(handler);
+                if (sResponse[0] == "back")
+                {
 
-
-        }
-        catch
-        {
-            string[] response = { "false" };
-            return response;
+                }
+                else if (sResponse[0] == "True")
+                {
+                    return sResponse;
+                }
+                else
+                {
+                    response[0] = "false";
+                    return response;
+                }
+            }
         }
     }
 
@@ -153,7 +142,7 @@ public class vBallTV
     }
     private static string[] SignIn(Socket handler)
     {
-        string[] response = { };
+        string[] response = new string[3];
         for (; ; )
         {
             
@@ -192,7 +181,18 @@ public class vBallTV
 
     public static void SignedIn(string username, int accountLV)
     {
-
+        SendGames();
+    }
+    
+    public static void SendGames()
+    {
+        for (int i = 0; i < GameList.Count(); i++)
+        {
+            Games a = GameList[i];
+            string jsonString = JsonSerializer.Serialize(a);
+            Games b = JsonSerializer.Deserialize<Games>(jsonString);
+            Console.WriteLine(b.print());
+        }
     }
 
 
@@ -217,7 +217,38 @@ public class vBallTV
             }
         }
     }
-    static void ExportUsers()
+    private static void LoadGames()
+    {
+        using (var reader = new StreamReader("games.csv"))
+        {
+            reader.ReadLine();
+
+            while (!reader.EndOfStream)
+            {
+                string line = reader.ReadLine();
+                string[] parts = line.Split(',');
+                GameList.Add(new Games(int.Parse(parts[0]), parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
+                Console.WriteLine( GameList[gamecount].print());
+                gamecount++;
+                //Console.WriteLine(login.GetValueOrDefault(parts[0]).print());
+            }
+        }
+    }
+    static void ExportGames()
+    {
+        Console.WriteLine("saving log");
+        using (var adder = new StreamWriter("games.csv"))
+        {
+            adder.WriteLine("GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon");
+            for(int i = 0; i < GameList.Count; i++)
+            {
+                adder.WriteLine(GameList[i].print());
+                Console.WriteLine(GameList[i].print());
+            }
+        }
+    }
+
+    private static void ExportUsers()
     {
         Console.WriteLine("saving log");
         using (var adder = new StreamWriter("users.csv"))

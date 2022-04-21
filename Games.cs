@@ -1,139 +1,67 @@
 ﻿using System.Text;
+using System.Text.Json;
 
 public class Games
 {
-    int GameID;
-    bool complete;
-    string winner;
-    int current_set;
-    string t1_Name;
-    string t2_Name;
-    int[] t1_Scores = { };
-    int[] t2_Scores = { };
-    int t1s1_Score;
-    int t1s2_Score;
-    int t1s3_Score;
-    int t2s1_Score;
-    int t2s2_Score;
-    int t2s3_Score;
-    int t1_SetsWon;
-    int t2_SetsWon;
+    public int GameNum { get; set; }
+    public string[] teams { get; set; } = new string[2];
+    public bool GameOver { get; set; }
+    public string Winner { get; set; }
+    public int CurrentSet { get; set; }
+    public int[] t1Scores { get; set; } = new int[3];
+    public int[] t2Scores { get; set; } = new int[3];
+    public int t1SetsWon { get; set; }
+    public int t2SetsWon { get; set; }
 
-    public Games(int GameID, bool complete, string winner,int current_set, string t1_Name, string t2_Name, int t1s1_Score, int t1s2_Score, int t1s3_Score, int t2s1_Score, int t2s2_Score, int t2s3_Score, int t1_SetsWon, int t2_SetsWon)
+    public Games(int GameNum, string team1, string team2, bool GameOver, string Winner, int CurrentSet, int t1s1Score, int t1s2Score, int t1s3Score, int t2s1Score, int t2s2Score, int t2s3Score, int t1SetsWon, int t2SetsWon)
     {
-        this.GameID = GameID;
-        this.complete = complete;
-        this.t1_Name = t1_Name;
-        this.t2_Name = t2_Name;
-
-        t1_Scores[0] = 0;
-        t2_Scores[0] = 0;
-
-        if (complete == true)
+        this.GameNum = GameNum;
+        teams[0] = team1;
+        teams[1] = team2;
+        this.GameOver = GameOver;
+        this.Winner = Winner;
+        if (this.GameOver)
         {
-            this.winner = winner;
-            this.current_set = 0;
-            this.t1_Scores[1] = t1s1_Score;
-            this.t2_Scores[1] = t2s1_Score;
-            this.t1_Scores[2] = t1s2_Score;
-            this.t2_Scores[2] = t2s2_Score;
-            this.t1_Scores[3] = t1s3_Score;
-            this.t2_Scores[3] = t2s3_Score;
-            this.t1_SetsWon = t1_SetsWon;
-            this.t2_SetsWon = t2_SetsWon;
+            this.CurrentSet = 69;
         }
         else
         {
-            this.winner = string.Empty;
-            this.current_set = current_set;
-            if (current_set >= 1) {
-                this.t1_Scores[1] = t1s1_Score;
-                this.t2_Scores[1] = t2s1_Score;
-                if (current_set >= 2)
-                {
-                    this.t1_Scores[2] = t1s2_Score;
-                    this.t2_Scores[2] = t2s2_Score;
-                    if (current_set == 3)
-                    {
-                        this.t1_Scores[3] = t1s3_Score;
-                        this.t2_Scores[3] = t2s3_Score;
+            this.CurrentSet = CurrentSet;
+        }
 
-                    }
-                    else
-                    {
-                        this.t1_Scores[3] = 0;
-                        this.t2_Scores[3] = 0;
-                    }
-                }
-                else
-                {
-                    this.t1_Scores[2] = 0;
-                    this.t2_Scores[2] = 0;
-                    this.t1_Scores[3] = 0;
-                    this.t2_Scores[3] = 0;
-                }
-            }
-            this.t1_SetsWon = t1_SetsWon;
-            this.t2_SetsWon = t2_SetsWon;
-        }
-    }
-
-    public void addPoint(string teamname) //1 or 2
-    {
-        if (teamname == this.t1_Name)
+        t1Scores[0] = t1s1Score;
+        t2Scores[0] = t2s1Score;
+        if (CurrentSet >= 2)
         {
-            t1_Scores[current_set] = ++t1_Scores[current_set];
-        }
-        else
-        {
-            t2_Scores[current_set] = ++t2_Scores[current_set];
-        }
-    }
-    public void removePoint(string teamname)
-    {
-        if (teamname == t1_Name)
-        {
-            t1_Scores[current_set] = --t1_Scores[current_set];
-        }
-        else
-        {
-            t2_Scores[current_set] = --t2_Scores[current_set];
-        }
-    }
-
-    public void nextSet()
-    {
-        if(t1_Scores[current_set] > t2_Scores[current_set])
-        {
-            t1_SetsWon++;
-            if (t1_SetsWon == 2)
+            t1Scores[1] = t1s2Score;
+            t2Scores[1] = t2s2Score;
+            if (CurrentSet >= 3)
             {
-                winner = t1_Name;
-                current_set = 0;
-                complete = true;
-                return;
+                t1Scores[2] = t1s3Score;
+                t2Scores[2] = t2s3Score;
+            }
+            else
+            {
+                t1Scores[2] = 0;
+                t2Scores[2] = 0;
             }
         }
         else
         {
-            t2_SetsWon++;
-            if (t1_SetsWon == 2)
-            {
-                winner = t2_Name;
-                current_set = 0;
-                complete = true;
-                return;
-            }
+            t1Scores[1] = 0;
+            t2Scores[1] = 0;
+            t1Scores[2] = 0;
+            t2Scores[2] = 0;
         }
-        current_set++;
-    }
-    public int getGameId()
-    {
-        return GameID;
-    }
-    public bool getComplete()
-    {
-        return complete;
-    }
+        
 
+        this.t1SetsWon = t1SetsWon;
+        this.t2SetsWon = t2SetsWon;
+    }
+    
+    public string print()
+    {
+        string output = GameNum.ToString() + ',' + teams[0] + ',' + teams[1] + ',' + GameOver.ToString() +','+ Winner + ',' + CurrentSet.ToString() +','+t1Scores[0].ToString() + ',' + t1Scores[1].ToString() + ',' + t1Scores[2].ToString() + ',' + t2Scores[0].ToString() + ',' + t2Scores[1].ToString() + ',' + t2Scores[2].ToString() + ','+t1SetsWon.ToString()+','+t2SetsWon.ToString();
+        return output;
+    }
 }
