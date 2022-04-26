@@ -23,7 +23,6 @@ public class vBallTV
     {
         LoadUsers();
         LoadGames();
-        ExportGames();
         var ipAddress = IPAddress.Parse(k_LocalIp);
         var localEp = new IPEndPoint(ipAddress, k_Port);
         using var listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -194,7 +193,7 @@ public class vBallTV
             {
                 message = Network.recievemessage(handler);
                 int game = int.Parse(message);
-                SendGameUpdate(handler, game);
+                //SendGameUpdate(handler, game);
                 OpenGame(handler, game, accountLV);
             }
             else if (message == "NewGame")
@@ -208,7 +207,7 @@ public class vBallTV
                     }
                     else if (message == "SaveGames")
                     {
-                        ExportGames();
+                        ExportGames(handler);
                     }
                     else
                     {
@@ -227,7 +226,7 @@ public class vBallTV
     {
         foreach(var Socket in sockets)
         {
-            string game = JsonSerializer.Serialize(GameDict[GameID]);
+            string game = "GAMEUPDATE%%%" + JsonSerializer.Serialize(GameDict[GameID]);
             Network.sendmessage(handler, game);
         }
         
@@ -321,7 +320,7 @@ public class vBallTV
             }
         }
     }
-    static void ExportGames()
+    static void ExportGames(Socket Handler)
     {
         Console.WriteLine("saving log");
         using (var adder = new StreamWriter("games.csv"))
@@ -334,6 +333,8 @@ public class vBallTV
                 Console.WriteLine(GameDict[key].print());
             }
         }
+        Console.WriteLine("LOG SAVED");
+        Network.sendmessage(Handler,"Games Saved");
     }
 
     private static void ExportUsers()
@@ -348,12 +349,5 @@ public class vBallTV
                 adder.WriteLine(key.ToString() + "," + accounts[key].print());
             }
         }
-    }
-    private static void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e, Socket handler)
-    {
-        Console.WriteLine("The Elapsed event was raised at {0} {1}", e.SignalTime, handler.RemoteEndPoint);
-
-        disconnect(handler);
-        return;
     }
 }
