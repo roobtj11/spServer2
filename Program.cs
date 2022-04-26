@@ -12,28 +12,33 @@ public class vBallTV
 {
 
     static Dictionary<string, Users> accounts = new Dictionary<string, Users>();
-    static List<Games> GameList = new List<Games> ();
+    static Dictionary<int, Games> GameDict = new Dictionary<int, Games>();
+    //static List<Games> GameList = new List<Games> ();
     static int gamecount = 0;
     private const string k_GlobalIp = "127.0.0.1";
     private const string k_LocalIp = "127.0.0.1";
     private const int k_Port = 7777;
+    static List<Socket> sockets = new List<Socket>();
     public static void  Main(string[] args)
     {
         LoadUsers();
         LoadGames();
         ExportGames();
-        SendGames();
         var ipAddress = IPAddress.Parse(k_LocalIp);
         var localEp = new IPEndPoint(ipAddress, k_Port);
         using var listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         listener.Bind(localEp);
         listener.Listen();
         Console.WriteLine("Waiting...");
+
+        
+
         for (; ; )
         {
             try
             {
                 var handler = listener.Accept();
+                sockets.Add(handler);
                 var thread = new Thread(new ThreadStart(() => ClientHandler(handler)));
                 thread.Start();
             }
@@ -54,7 +59,7 @@ public class vBallTV
             string[] wResponse = WelcomeMenu(handler);
             if(wResponse[0] == "True")
             {
-                SignedIn(wResponse[1], int.Parse(wResponse[2]));
+                SignedIn(handler, wResponse[1], int.Parse(wResponse[2]));
             }
             else
             {
@@ -164,7 +169,6 @@ public class vBallTV
                 Console.WriteLine("{0} has signed in as {1}, as a {2} account.", handler.RemoteEndPoint, username, accounts.GetValueOrDefault(username).printAccountName());
                 string approved = "Approved," + accounts.GetValueOrDefault(username).printAccountPerm();
                 Network.sendmessage(handler, approved);
-                Network.sendmessage(handler, "1%hello");
 
                 response[0] = "True";
                 response[1] = username;
@@ -179,20 +183,101 @@ public class vBallTV
 
     }
 
-    public static void SignedIn(string username, int accountLV)
+    public static void SignedIn(Socket handler, string username, int accountLV)
     {
-        SendGames();
+        for (; ; )
+        {
+            SendGames(handler);
+            string message = Network.recievemessage(handler);
+
+            if (message == "OpenGame")
+            {
+                message = Network.recievemessage(handler);
+                int game = int.Parse(message);
+                SendGameUpdate(handler, game);
+                OpenGame(handler, game, accountLV);
+            }
+            else if (message == "NewGame")
+            {
+                for (; ; )
+                {
+                    message = Network.recievemessage(handler);
+                    if (message == "Back")
+                    {
+                        break;
+                    }
+                    else if (message == "SaveGames")
+                    {
+                        ExportGames();
+                    }
+                    else
+                    {
+                        string[] teams = message.Split(',');
+                        GameDict.Add(gamecount, new Games(gamecount, teams[0], teams[1]));
+                        message = "Game created under ID: " + gamecount;
+                        Network.sendmessage(handler, message);
+                        gamecount++;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void SendGameUpdate(Socket handler, int GameID)
+    {
+        foreach(var Socket in sockets)
+        {
+            string game = JsonSerializer.Serialize(GameDict[GameID]);
+            Network.sendmessage(handler, game);
+        }
+        
+    }
+    public static void OpenGame(Socket handler, int GameID, int accountLV)
+    {
+        for(; ; )
+        {
+            string input = Network.recievemessage(handler);
+            if (input == "Back")
+            {
+                return;
+            }
+            else if(input == "GameUpdate")
+            {
+                if(accountLV < 2)
+                {
+                    Network.sendmessage(handler, "ERROR TERMINATING CONNECTION");
+                    handler.Shutdown(SocketShutdown.Both);
+                    handler.Close();
+                }
+                else
+                {
+                    RecieveGameUpdate(handler, GameID);
+                }
+            }
+        }
+    }
+    static void RecieveGameUpdate(Socket handler, int GameID)
+    {
+        string gameupdate = Network.recievemessage(handler);
+        GameDict[GameID] = JsonSerializer.Deserialize<Games>(gameupdate);
+        //Console.WriteLine(GameDict[GameID].t1Scores[GameDict[GameID].CurrentSet-1].ToString());
+        SendGameUpdate(handler,GameID);
     }
     
-    public static void SendGames()
+    public static void SendGames(Socket handler)
     {
-        for (int i = 0; i < GameList.Count(); i++)
+        Stack<string> games = new Stack<string>();
+        var keys = GameDict.Keys.ToList();
+        foreach (var key in keys)
         {
-            Games a = GameList[i];
+            Games a = GameDict[key];
             string jsonString = JsonSerializer.Serialize(a);
-            Games b = JsonSerializer.Deserialize<Games>(jsonString);
-            Console.WriteLine(b.print());
+            //Games b = JsonSerializer.Deserialize<Games>(jsonString);
+            games.Push(jsonString);
+            //Console.WriteLine(b.print());
         }
+        string stackString = JsonSerializer.Serialize<Stack<string>>(games);
+        Network.sendmessage(handler, stackString);
     }
 
 
@@ -222,13 +307,15 @@ public class vBallTV
         using (var reader = new StreamReader("games.csv"))
         {
             reader.ReadLine();
-
             while (!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
                 string[] parts = line.Split(',');
-                GameList.Add(new Games(int.Parse(parts[0]), parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
-                Console.WriteLine( GameList[gamecount].print());
+                //GameList.Add(new Games(count, parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
+                GameDict.Add(gamecount, new Games(gamecount, parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
+                Console.WriteLine(GameDict[gamecount].print());
+                
+                //Console.WriteLine( GameList[gamecount].print());
                 gamecount++;
                 //Console.WriteLine(login.GetValueOrDefault(parts[0]).print());
             }
@@ -240,10 +327,11 @@ public class vBallTV
         using (var adder = new StreamWriter("games.csv"))
         {
             adder.WriteLine("GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon");
-            for(int i = 0; i < GameList.Count; i++)
+            var keys = GameDict.Keys.ToList();
+            foreach(var key in keys)
             {
-                adder.WriteLine(GameList[i].print());
-                Console.WriteLine(GameList[i].print());
+                adder.WriteLine(GameDict[key].print());
+                Console.WriteLine(GameDict[key].print());
             }
         }
     }

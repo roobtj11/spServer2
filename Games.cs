@@ -63,6 +63,24 @@ public class Games
     {
 
     }
+
+    public Games(int gamenum, string team1, string team2)
+    {
+        this.GameNum = gamenum;
+        teams[0] = team1;
+        teams[1] = team2;
+        GameOver = false;
+        CurrentSet = 1;
+        t1Scores[0] = 0;
+        t1Scores[1] = 0;
+        t1Scores[2] = 0;
+        t2Scores[0] = 0;
+        t2Scores[1] = 0;
+        t2Scores[2] = 0;
+        t1SetsWon = 0;
+        t2SetsWon = 0;
+        ////////////////finish making class to create new game
+    }
     
     public string print()
     {

@@ -15,15 +15,19 @@ public static class Network
 
     public static string recievemessage(Socket socket)
     {
-        var buffer = new byte[1024];
+        var buffer = new byte[2048];
         var numBytesReceived = socket.Receive(buffer);
         var textReceived = Encoding.ASCII.GetString(buffer, 0, numBytesReceived);
-        return textReceived;
+        string[] a = textReceived.Split("\r");
+        return a[0];
     }
 
     public static void sendmessage(Socket socket, string message)
     {
-        var bytes = Encoding.ASCII.GetBytes(message + "\r");
+        message = message + "\r";
+        Console.WriteLine(message.Length.ToString());
+
+        var bytes = Encoding.ASCII.GetBytes(message);
         socket.Send(bytes);
     }
 
