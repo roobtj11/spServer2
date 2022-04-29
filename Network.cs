@@ -25,7 +25,7 @@ public static class Network
     public static void sendmessage(Socket socket, string message)
     {
         message = message + "\r";
-        Console.WriteLine(message.Length.ToString());
+        //Console.WriteLine(message.Length.ToString());
 
         var bytes = Encoding.ASCII.GetBytes(message);
         socket.Send(bytes);

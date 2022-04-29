@@ -215,6 +215,7 @@ public class vBallTV
                         GameDict.Add(gamecount, new Games(gamecount, teams[0], teams[1]));
                         message = "Game created under ID: " + gamecount;
                         Network.sendmessage(handler, message);
+                        SendGameUpdate(handler, gamecount);
                         gamecount++;
                     }
                 }
@@ -227,7 +228,7 @@ public class vBallTV
         foreach(var Socket in sockets)
         {
             string game = "GAMEUPDATE%%%" + JsonSerializer.Serialize(GameDict[GameID]);
-            Network.sendmessage(handler, game);
+            Network.sendmessage(Socket, game);
         }
         
     }
@@ -309,9 +310,10 @@ public class vBallTV
             while (!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
-                string[] parts = line.Split(',');
+                
                 //GameList.Add(new Games(count, parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
-                GameDict.Add(gamecount, new Games(gamecount, parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
+                
+                GameDict.Add(gamecount, JsonSerializer.Deserialize<Games>(line));
                 Console.WriteLine(GameDict[gamecount].print());
                 
                 //Console.WriteLine( GameList[gamecount].print());
@@ -325,12 +327,12 @@ public class vBallTV
         Console.WriteLine("saving log");
         using (var adder = new StreamWriter("games.csv"))
         {
-            adder.WriteLine("GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon");
+            adder.WriteLine("GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon,Messages");
             var keys = GameDict.Keys.ToList();
             foreach(var key in keys)
             {
-                adder.WriteLine(GameDict[key].print());
-                Console.WriteLine(GameDict[key].print());
+                adder.WriteLine(JsonSerializer.Serialize(GameDict[key]));
+                Console.WriteLine(JsonSerializer.Serialize(GameDict[key]));
             }
         }
         Console.WriteLine("LOG SAVED");
