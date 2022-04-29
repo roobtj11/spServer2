@@ -19,6 +19,7 @@ public class vBallTV
     private const string k_LocalIp = "127.0.0.1";
     private const int k_Port = 7777;
     static List<Socket> sockets = new List<Socket>();
+    public static bool serveropen=true;
     public static void  Main(string[] args)
     {
         LoadUsers();
@@ -30,12 +31,13 @@ public class vBallTV
         listener.Listen();
         Console.WriteLine("Waiting...");
 
-        
 
-        for (; ; )
+        Task.Run(() => open());
+        while (serveropen)
         {
             try
             {
+                
                 var handler = listener.Accept();
                 sockets.Add(handler);
                 var thread = new Thread(new ThreadStart(() => ClientHandler(handler)));
@@ -49,7 +51,17 @@ public class vBallTV
         //listen forever for connections
 
     }
-
+    private static void open()
+    {
+        for(; ; )
+        {
+            if (!serveropen)
+            {
+                System.Environment.Exit(18);
+                break;
+            }
+        }
+    }
     public static void ClientHandler(Socket handler)
     {
         try
@@ -70,8 +82,7 @@ public class vBallTV
         {
             disconnect(handler);
             return;
-        }
-        
+        }    
     }
 
     public static string[] WelcomeMenu(Socket handler)
@@ -79,7 +90,7 @@ public class vBallTV
 
         for (; ; )
         {
-            string[] response = { };
+            string[] response = new string[3];
             string loginORcreate = Network.recievemessage(handler);
             if (loginORcreate == "Quit")
                 throw new Exception("a");
@@ -122,17 +133,18 @@ public class vBallTV
 
     private static string CreateNewUser(Socket handler)
     {
-        string username = Network.recievemessage(handler);
-        if (username == "back")
-        {
-            Console.WriteLine("UserBackedOut");
-            return "back";
-        }
         for (; ; )
         {
+            string username = Network.recievemessage(handler);
+            if (username == "quit")
+               {
+                Console.WriteLine("UserBackedOut");
+                return "back";
+            }
+        
             if (accounts.ContainsKey(username))
             {
-                Network.sendmessage(handler, "E:1\r");
+                Network.sendmessage(handler, "E:1");
             }
             else
             {
@@ -149,20 +161,20 @@ public class vBallTV
         string[] response = new string[3];
         for (; ; )
         {
-            
+
             string line = Network.recievemessage(handler);
-            
+
             if (line == "back")
             {
                 Console.WriteLine(line);
-                string[] response2 = { line};
+                string[] response2 = { line };
                 return response2;
             }
             string[] parts = line.Split(',');
             string username = parts[0];
             string password = parts[1];
-            
-            
+
+
             if (accounts.ContainsKey(username) && accounts.GetValueOrDefault(username).getPasswordHash() == password)
             {
                 Console.WriteLine("{0} has signed in as {1}, as a {2} account.", handler.RemoteEndPoint, username, accounts.GetValueOrDefault(username).printAccountName());
@@ -209,6 +221,27 @@ public class vBallTV
                     {
                         ExportGames(handler);
                     }
+                    else if (message == "Close Server")
+                    {
+                        if (Network.recievemessage(handler) == accounts[username].getPasswordHash() && accountLV == 3)
+                        {
+                            Network.sendmessage(handler, "Begining to Close the Server");
+                            ExportUsers();
+                            ExportGames(handler);
+                            foreach (Socket Socket in sockets)
+                            {
+                                Network.sendmessage(Socket,"Server Closed");
+                                disconnect(Socket);
+                            }
+                            serveropen = false;
+                            throw new Exception("Close Server");
+                        }
+                        else
+                        {
+                            Network.sendmessage(handler, "Failed");
+                        }
+                        
+                    }
                     else
                     {
                         string[] teams = message.Split(',');
@@ -243,25 +276,29 @@ public class vBallTV
             }
             else if(input == "GameUpdate")
             {
-                if(accountLV < 2)
-                {
-                    Network.sendmessage(handler, "ERROR TERMINATING CONNECTION");
-                    handler.Shutdown(SocketShutdown.Both);
-                    handler.Close();
-                }
-                else
-                {
-                    RecieveGameUpdate(handler, GameID);
-                }
+                RecieveGameUpdate(handler, GameID, accountLV);
             }
         }
     }
-    static void RecieveGameUpdate(Socket handler, int GameID)
+    static void RecieveGameUpdate(Socket handler, int GameID, int accountLV)
     {
         string gameupdate = Network.recievemessage(handler);
-        GameDict[GameID] = JsonSerializer.Deserialize<Games>(gameupdate);
-        //Console.WriteLine(GameDict[GameID].t1Scores[GameDict[GameID].CurrentSet-1].ToString());
-        SendGameUpdate(handler,GameID);
+        Games a = JsonSerializer.Deserialize<Games>(gameupdate);
+        if (accountLV < 2 && a.print_WO_Msg() != GameDict[GameID].print_WO_Msg())
+        {
+            Network.sendmessage(handler, "ERROR TERMINATING CONNECTION");
+            disconnect(handler);
+        }
+        else
+        {
+            GameDict[GameID] = a;
+            //Console.WriteLine(GameDict[GameID].t1Scores[GameDict[GameID].CurrentSet-1].ToString());
+            SendGameUpdate(handler, GameID);
+            if (a.GameOver)
+            {
+                ExportGames(handler);
+            }
+        }
     }
     
     public static void SendGames(Socket handler)

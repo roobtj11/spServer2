@@ -90,4 +90,9 @@ public class Games
         string output = GameNum.ToString() + ',' + teams[0] + ',' + teams[1] + ',' + GameOver.ToString() +','+ Winner + ',' + CurrentSet.ToString() +','+t1Scores[0].ToString() + ',' + t1Scores[1].ToString() + ',' + t1Scores[2].ToString() + ',' + t2Scores[0].ToString() + ',' + t2Scores[1].ToString() + ',' + t2Scores[2].ToString() + ','+t1SetsWon.ToString()+','+t2SetsWon.ToString()+','+msg;
         return output;
     }
+    public string print_WO_Msg()
+    {
+        string output = GameNum.ToString() + ',' + teams[0] + ',' + teams[1] + ',' + GameOver.ToString() + ',' + Winner + ',' + CurrentSet.ToString() + ',' + t1Scores[0].ToString() + ',' + t1Scores[1].ToString() + ',' + t1Scores[2].ToString() + ',' + t2Scores[0].ToString() + ',' + t2Scores[1].ToString() + ',' + t2Scores[2].ToString() + ',' + t1SetsWon.ToString() + ',' + t2SetsWon.ToString();
+        return output;
+    }
 }
