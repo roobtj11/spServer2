@@ -14,7 +14,6 @@ public class vBallTV
     static Dictionary<string, Users> accounts = new Dictionary<string, Users>();
     static Dictionary<int, Games> GameDict = new Dictionary<int, Games>();
     //static List<Games> GameList = new List<Games> ();
-    static int gamecount = 0;
     private const string k_GlobalIp = "127.0.0.1";
     private const string k_LocalIp = "127.0.0.1";
     private const int k_Port = 7777;
@@ -245,11 +244,16 @@ public class vBallTV
                     else
                     {
                         string[] teams = message.Split(',');
+                        int gamecount = 0;
+                        while (GameDict.ContainsKey(gamecount))
+                        {
+                            gamecount++;
+                        }
                         GameDict.Add(gamecount, new Games(gamecount, teams[0], teams[1]));
                         message = "Game created under ID: " + gamecount;
                         Network.sendmessage(handler, message);
                         SendGameUpdate(handler, gamecount);
-                        gamecount++;
+                        
                     }
                 }
             }
@@ -296,7 +300,7 @@ public class vBallTV
             SendGameUpdate(handler, GameID);
             if (a.GameOver)
             {
-                ExportGames(handler);
+                ExportGamesNoResponse();
             }
         }
     }
@@ -343,6 +347,7 @@ public class vBallTV
         using (var reader = new StreamReader("games.csv"))
         {
             reader.ReadLine();
+            int gamecount = 0;
             while (!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
@@ -373,6 +378,21 @@ public class vBallTV
         }
         Console.WriteLine("LOG SAVED");
         Network.sendmessage(Handler,"Games Saved");
+    }
+    static void ExportGamesNoResponse()
+    {
+        Console.WriteLine("saving log");
+        using (var adder = new StreamWriter("games.csv"))
+        {
+            adder.WriteLine("GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon,Messages");
+            var keys = GameDict.Keys.ToList();
+            foreach (var key in keys)
+            {
+                adder.WriteLine(JsonSerializer.Serialize(GameDict[key]));
+                Console.WriteLine(JsonSerializer.Serialize(GameDict[key]));
+            }
+        }
+        Console.WriteLine("LOG SAVED");
     }
 
     private static void ExportUsers()
