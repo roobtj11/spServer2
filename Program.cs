@@ -322,7 +322,6 @@ public class vBallTV
     {
         Console.WriteLine("User Disconnected");
         socket.Shutdown(SocketShutdown.Both);
-        
     }
 
     private static void LoadUsers()
