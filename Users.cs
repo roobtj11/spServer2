@@ -1,10 +1,21 @@
-﻿using System.Text;
+﻿/*
+ * God level Admin: “Can do everything including close the server”
+ *	Username: Admin 		Password: Admin1!
+ *	
+ * Regular admin: “Can do everything except close the server”
+ *	Username: Admin2		Password: Admin2!
+ *	
+ * Standard user: “View games and chat”
+ *	Username: User123!		Password: User123!
+ *	
+ * */
 
+using System.Text;
 public class Users
 {
     private string username;
     private string password_hash;
-    private string account_type; // 1=standard 2 = Admin 3 = GOD
+    private string account_type;
 
     public Users(string username, string password_hash, string account_type)
     {

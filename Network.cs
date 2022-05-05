@@ -46,7 +46,6 @@ public static class Network
     public static void sendmessage(Socket socket, string message)
     {
         message = message + "\r";
-        //Console.WriteLine(message.Length.ToString());
         string WholeMessage = message;
         
 

@@ -296,7 +296,7 @@ public class vBallTV
         else
         {
             GameDict[GameID] = a;
-            //Console.WriteLine(GameDict[GameID].t1Scores[GameDict[GameID].CurrentSet-1].ToString());
+            
             SendGameUpdate(handler, GameID);
             if (a.GameOver)
             {
@@ -313,9 +313,9 @@ public class vBallTV
         {
             Games a = GameDict[key];
             string jsonString = JsonSerializer.Serialize(a);
-            //Games b = JsonSerializer.Deserialize<Games>(jsonString);
+            
             games.Push(jsonString);
-            //Console.WriteLine(b.print());
+            
         }
         string stackString = JsonSerializer.Serialize<Stack<string>>(games);
         Network.sendmessage(handler, stackString);
@@ -338,7 +338,7 @@ public class vBallTV
                 string line = reader.ReadLine();
                 string[] parts = line.Split(',');
                 accounts.Add(parts[0], new Users(parts[0], parts[1], parts[2]));
-                //Console.WriteLine(login.GetValueOrDefault(parts[0]).print());
+                
             }
         }
     }
@@ -351,15 +351,12 @@ public class vBallTV
             while (!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
-                
-                //GameList.Add(new Games(count, parts[1], parts[2], bool.Parse(parts[3]), parts[4], int.Parse(parts[5]), int.Parse(parts[6]), int.Parse(parts[7]), int.Parse(parts[8]), int.Parse(parts[9]), int.Parse(parts[10]), int.Parse(parts[11]), int.Parse(parts[12]), int.Parse(parts[13])));
-                
+
                 GameDict.Add(gamecount, JsonSerializer.Deserialize<Games>(line));
                 Console.WriteLine(GameDict[gamecount].print());
-                
-                //Console.WriteLine( GameList[gamecount].print());
+
                 gamecount++;
-                //Console.WriteLine(login.GetValueOrDefault(parts[0]).print());
+
             }
         }
     }
