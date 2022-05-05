@@ -1,0 +1,3 @@
+GameNumber,Team1,Team2,GameOver,Winner,CurrentSet,T1S1Score,T1S2Score,T1S3Score,T2S1Score,T2S2Score,T2S3Score,T1SetsWone,T2SetsWon,Messages
+{"GameNum":0,"teams":["UWW","Oshkosh"],"GameOver":false,"Winner":null,"CurrentSet":1,"t1Scores":[3,0,0],"t2Scores":[2,0,0],"t1SetsWon":0,"t2SetsWon":0,"messages":[]}
+{"GameNum":1,"teams":["Oshkosh","Eau Claire"],"GameOver":false,"Winner":null,"CurrentSet":1,"t1Scores":[0,0,0],"t2Scores":[0,0,0],"t1SetsWon":0,"t2SetsWon":0,"messages":[]}
